@@ -5,10 +5,14 @@ const friendSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, // Request Sender
         ref: "User"
     },
-    accepter: {
-        type: mongoose.Schema.Types.ObjectId, // Request Accepted
+    acceptor: {
+        type: mongoose.Schema.Types.ObjectId, // Request Acceptor
         ref: "User"
+    },
+    accepted: {
+        type: Boolean,
+        default: false
     }
 })
 
-export const friendModel = mongoose.model("Friend", friendSchema);
+export const friendModel = mongoose.models.friends || mongoose.model("Friend", friendSchema);
