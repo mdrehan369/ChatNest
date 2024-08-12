@@ -7,7 +7,6 @@ import Link from "next/link"
 export default function Header() {
 
     const user = useAppSelector(state => state.user.user)
-    console.log(user)
     // const user = {}
 
     return (

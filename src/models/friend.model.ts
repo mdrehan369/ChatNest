@@ -15,4 +15,4 @@ const friendSchema = new mongoose.Schema({
     }
 })
 
-export const friendModel = mongoose.models.friends || mongoose.model("Friend", friendSchema);
+export const friendModel = mongoose.models.Friend || mongoose.model("Friend", friendSchema);

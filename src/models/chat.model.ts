@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const chatSchema = new mongoose.Schema({
     type: {
+        type: String,
         enum: ["TEXT", "IMAGE", "VIDEO", "PDF"],
         default: "TEXT"
     },
@@ -20,4 +21,4 @@ const chatSchema = new mongoose.Schema({
     }
 }, {timestamps: true})
 
-export const chatModel = mongoose.model("Chat", chatSchema);
+export const chatModel = mongoose.models.Chat || mongoose.model("Chat", chatSchema);

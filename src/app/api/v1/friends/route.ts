@@ -3,9 +3,11 @@ import { CustomResponse } from "@/helpers/customResponse";
 import { connect } from "@/helpers/connectDB";
 import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken"
+import { chatModel } from "@/models/chat.model";
 
 connect()
 
+// sends friend request
 export async function POST(req: NextRequest) {
     try {
 
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
+// It accepts friend request
 export async function GET(req: NextRequest) {
     try {
 
@@ -61,6 +64,7 @@ export async function GET(req: NextRequest) {
     }
 }
 
+// unfriends
 export async function DELETE(req: NextRequest) {
     try {
 
@@ -76,6 +80,12 @@ export async function DELETE(req: NextRequest) {
         if(!coll) return CustomResponse(400, {}, "No collection found")
 
         await coll.deleteOne()
+        await chatModel.deleteMany({
+            $or: [
+                {from: sender.id, to: acceptor},
+                {from: acceptor, to: sender.id}
+            ]
+        })
 
         return CustomResponse(200, {}, "Done")
 
