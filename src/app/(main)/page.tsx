@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { uploadPreferences } from "@/redux/features/users/preferencesSlice";
 import Highlighter from "react-highlight-words";
+import { MessageCircleMore, Trash2, X } from "lucide-react";
 
 
 function ISOtoTime(isoDate: any) {
@@ -30,7 +31,15 @@ function ISOtoTime(isoDate: any) {
     return `${hours}: ${minutes}`
 }
 
-function ChatBox({ userId }: any) {
+function NoChat() {
+    return (
+        <div className="w-[77vw] h-[90vh] rounded border-[1px] bg-gray-100 border-gray-400 flex items-center justify-center">
+            <MessageCircleMore size={"200px"} className=" w-[30vw] text-gray-400" />
+        </div>
+    )
+}
+
+function ChatBox({ userId, unmount }: any) {
 
     const [chats, setChats] = useState([])
     const [newChats, setNewChats] = useState([])
@@ -42,6 +51,10 @@ function ChatBox({ userId }: any) {
     const router = useRouter()
     const [wallpaper, setWallpaper]: any = useState("")
     const { toast } = useToast()
+    const isTyping: any = useRef(null)
+    const sentAudio = useRef(new Audio("/sounds/sent.mp3"))
+    const recieveAudio = useRef(new Audio("/sounds/recieve.mp3"))
+    const [selectedChats, setSelectedChats]: any = useState([])
 
     useEffect((): any => {
         ; (async () => {
@@ -60,7 +73,6 @@ function ChatBox({ userId }: any) {
             }
         })()
 
-
     }, [])
 
 
@@ -71,11 +83,25 @@ function ChatBox({ userId }: any) {
 
             socket.on("msgRecieved", (data: any) => {
                 setNewChats((prev): any => [...prev, data])
+                recieveAudio.current.play()
             })
 
             socket.on("loadChats", (data: any) => {
                 if (data.length === 0) return
                 setNewChats((prev): any => [...prev, ...data])
+            })
+
+            socket.on("typing", () => {
+
+                if (isTyping.current) clearTimeout(isTyping.current)
+                else document.getElementById("status")!.innerText = "typing..."
+
+                isTyping.current = setTimeout(() => {
+                    clearTimeout(isTyping.current)
+                    isTyping.current = null
+                    document.getElementById("status")!.innerText = ""
+                }, 2000)
+
             })
         }
 
@@ -86,6 +112,7 @@ function ChatBox({ userId }: any) {
     }, [socket])
 
     const sendMessage = () => {
+        if (message === "") return
         const data = {
             from: loggedUserId,
             to: userId,
@@ -95,6 +122,7 @@ function ChatBox({ userId }: any) {
         socket.emit("sendMessage", data)
         setNewChats((prev): any => [...prev, data])
         setMessage("")
+        sentAudio.current.play()
     }
 
     const unfriend = async () => {
@@ -154,12 +182,14 @@ function ChatBox({ userId }: any) {
     const removeWallpaper = async () => {
         try {
             toast({
-                title: "Deleting wallpaper..."
+                title: "Deleting wallpaper...",
+                className: "bg-blue-100"
             })
             await axios.delete(`/api/v1/preferences/wallpaper?user=${userId}`)
             setWallpaper("")
             toast({
-                title: "Deleted Successfully!"
+                title: "Deleted Successfully!",
+                className: "bg-green-400"
             })
 
         } catch (err) {
@@ -171,9 +201,39 @@ function ChatBox({ userId }: any) {
         }
     }
 
+    const handleSelectedChats = async () => {
+        try {
+            
+            toast({
+                title: "Deleting chats..."
+            })
+
+            const chats = selectedChats.join(',')
+            console.log(chats)
+            await axios.delete(`/api/v1/chats?chats=${chats}`)
+
+            toast({
+                title: "Chats deleted successfully!",
+                className: "bg-green-400"
+            })
+
+            setChats((prev) => prev.filter((ch: any) => selectedChats.indexOf(ch._id) === -1))
+            setNewChats((prev) => prev.filter((ch: any) => selectedChats.indexOf(ch._id) === -1))
+
+            setSelectedChats([])
+
+        } catch (err) {
+            console.log(err)
+            toast({
+                title: "An error occurred while deleting chats",
+                variant: "destructive"
+            })
+        }
+    }
+
     return (
         <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
-            <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400">
+            <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
                 <div className="flex items-center justify-start gap-3">
                     <Avatar>
                         <AvatarImage src={"https://github.com/shadcn.png"} />
@@ -182,6 +242,7 @@ function ChatBox({ userId }: any) {
                     <div className=" flex flex-col items-start justify-center gap-0">
                         <span className="text-xl text-black font-medium">{user?.name}</span>
                         <span className="text-sm font-bold text-gray-500 italic">@{user?.username}</span>
+                        <span id="status" className="text-xs font-semibold absolute bottom-1 text-gray-500 italic"></span>
                     </div>
                 </div>
                 <input
@@ -190,20 +251,32 @@ function ChatBox({ userId }: any) {
                     className="hidden"
                     name="wallpaper"
                     onChange={(e) => { updateWallpaper(e.currentTarget.files![0]) }} />
-                <DropdownMenu>
-                    <DropdownMenuTrigger><BsThreeDots className="hover:bg-gray-400 rounded p-1 transition-colors duration-300 size-8" /></DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem>View {user?.name}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => unfriend()}>Unfriend {user?.name}</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => deleteAllChats()}>Delete all chats</DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <label htmlFor="wallpaper">Wallpapers</label>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Search</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => removeWallpaper()}>Remove wallpaper</DropdownMenuItem>
-                        <DropdownMenuItem>Media</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+
+                <div className="flex items-center justify-center gap-6">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger><BsThreeDots className="hover:bg-gray-400 rounded p-1 transition-colors duration-300 size-8" /></DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem>View {user?.name}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => unfriend()}>Unfriend {user?.name}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => deleteAllChats()}>Delete all chats</DropdownMenuItem>
+                            <DropdownMenuItem>
+                                <label htmlFor="wallpaper">Wallpapers</label>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>Search</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => removeWallpaper()}>Remove wallpaper</DropdownMenuItem>
+                            <DropdownMenuItem>Media</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300" onClick={() => unmount()}><X /></div>
+
+                    {
+                        selectedChats.length !== 0 &&
+                        <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300">
+                            <Trash2 onClick={() => handleSelectedChats()} />
+                        </div>
+                    }
+                </div>
 
             </div>
             <div className=" overflow-y-scroll flex flex-col-reverse h-[80%] w-full relative" id="textBox"
@@ -221,7 +294,7 @@ function ChatBox({ userId }: any) {
                                     <span>{chat.content}</span>
                                     <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
                                 </div>
-                                : <div className=" bg-gray-200 text-black px-4 py-1 rounded flex flex-col items-end justify-between">
+                                : <div onDoubleClick={() => (selectedChats.indexOf(chat._id) == -1) ? setSelectedChats((prev: any): any => [...prev, chat._id]) : setSelectedChats((prev: any): any => prev.filter((ch: any) => ch !== chat._id))} className={`${selectedChats.indexOf(chat._id) === -1 ? "bg-gray-200" : "bg-blue-300"} text-black px-4 py-1 rounded flex flex-col items-end justify-between`}>
                                     <span>{chat.content}</span>
                                     <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
                                 </div>
@@ -238,6 +311,7 @@ function ChatBox({ userId }: any) {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={(e) => {
                         if (e.key === 'Enter') sendMessage()
+                        else socket?.emit("typing", {})
                     }} />
                 <Button
                     variant={"default"}
@@ -287,7 +361,6 @@ export default function Home() {
             ; (async () => {
                 try {
                     const response = await axios.get(`/api/v1/friends/all?search=${search}`)
-                    console.log(response.data)
                     setFriends(response.data.data.friends)
                 } catch (error) {
                     console.log(error);
@@ -297,6 +370,10 @@ export default function Home() {
             })()
         }
     }, [userState, search])
+
+    const unmount = () => {
+        setUserId("")
+    }
 
     return (
         !loader && userState ?
@@ -333,8 +410,9 @@ export default function Home() {
 
                 </div>
                 {
-                    userId != "" &&
-                    <ChatBox userId={userId} key={Date.now()} />
+                    userId != "" ?
+                    <ChatBox userId={userId} unmount={unmount} key={Date.now()} />
+                    : <NoChat />
                 }
             </main>
             : <Loading />

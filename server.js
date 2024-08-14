@@ -47,6 +47,10 @@ app.prepare().then(() => {
             socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("msgRecieved", message)
         })
 
+        socket.on("typing", () => {
+            socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("typing")
+        })
+
         socket.on("disconnecting", (reason) => {
             console.log(chalk.redBright("Socket ", socket.id, " disconnected due to ", reason))
 

@@ -36,7 +36,7 @@ export async function DELETE(req: NextRequest) {
 
         if(!loggedUser || !userId) return CustomResponse(400, {}, "Some fields are missing")
 
-        const preference = await preferencesModel.findOne({user: loggedUser._id})
+        const preference = await preferencesModel.findOne({user: loggedUser.id})
         if(!preference) return CustomResponse(404, {}, "Preferences not found")
 
         for(let wallpaper of preference.wallpapers) {

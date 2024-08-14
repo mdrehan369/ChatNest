@@ -66,23 +66,32 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// Deletes all chats
+// Deletes all chats if selected chats parameter is ommited
 export async function DELETE(req: NextRequest) {
     try {
 
         const user = req.nextUrl.searchParams.get("user")
         const loggeduser: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
 
-        if (!user || !loggeduser) return CustomResponse(404, {}, "Some fields are missing")
+        const chats: string | null= req.nextUrl.searchParams.get("chats")
+        if (chats) {
 
-        await chatModel.deleteMany({
-            $or: [
-                { from: user, to: loggeduser.id },
-                { from: loggeduser.id, to: user }
-            ]
-        })
+            let chatsArr = chats.split(',').filter((chat: string) => chat !== "")
+            await chatModel.deleteMany({ "_id": { "$in": chatsArr } })
+            return CustomResponse(200, {}, "Messages deleted successfully!")
 
-        return CustomResponse(200, {}, "Deleted successfully")
+        } else {
+
+            if (!user || !loggeduser) return CustomResponse(404, {}, "Some fields are missing")
+            await chatModel.deleteMany({
+                $or: [
+                    { from: user, to: loggeduser.id },
+                    { from: loggeduser.id, to: user }
+                ]
+            })
+
+            return CustomResponse(200, {}, "Deleted successfully")
+        }
 
     } catch (err: any) {
         console.log(err)
