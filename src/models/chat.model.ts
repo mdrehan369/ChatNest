@@ -18,6 +18,10 @@ const chatSchema = new mongoose.Schema({
     to: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
+    },
+    seen: {
+        type: Boolean,
+        default: false
     }
 }, {timestamps: true})
 

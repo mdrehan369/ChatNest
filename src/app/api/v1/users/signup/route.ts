@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
             name
         });
 
+        newUser.isOnline = true
+        await newUser.save()
         const token = newUser.generateAccessToken();
         req.cookies.set("accessToken", token)
         return CustomResponse(201, {user: newUser}, "User created successfully")

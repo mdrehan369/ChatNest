@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
             "message": "Please fill the correct password"
         }, "Invalid password")
 
+        user.isOnline = true
+        await user.save()
         const token = user.generateAccessToken();
         cookies().set("accessToken", token)
         return CustomResponse(200, {user}, "User logged in successfully")

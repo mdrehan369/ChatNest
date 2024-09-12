@@ -32,6 +32,15 @@ export async function GET(req: NextRequest) {
             ]
         }).sort("createdAt")
 
+        await chatModel.updateMany({
+            $or: [
+                { from: user._id, to: decodedToken.id },
+                { from: decodedToken.id, to: user._id },
+            ]
+        },
+        {$set: {"seen": true}}
+        )
+
         const roomId = generateRoomId(decodedToken.id, user._id.toString())
 
         return CustomResponse(200, { chats, user, roomId }, "Fetched")
@@ -73,7 +82,7 @@ export async function DELETE(req: NextRequest) {
         const user = req.nextUrl.searchParams.get("user")
         const loggeduser: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
 
-        const chats: string | null= req.nextUrl.searchParams.get("chats")
+        const chats: string | null = req.nextUrl.searchParams.get("chats")
         if (chats) {
 
             let chatsArr = chats.split(',').filter((chat: string) => chat !== "")

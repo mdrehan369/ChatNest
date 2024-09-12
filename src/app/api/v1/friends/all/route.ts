@@ -1,10 +1,9 @@
-import { connect } from "@/helpers/connectDB";
-import { CustomResponse } from "@/helpers/customResponse";
-import { NextRequest } from "next/server";
-// import { friendModel } from "@/models/friend.model";
-import { fetchUser } from "@/helpers/fetchUser";
-import mongoose from "mongoose";
-import { userModel } from "@/models/user.model";
+import { connect } from "@/helpers/connectDB"
+import { CustomResponse } from "@/helpers/customResponse"
+import { NextRequest } from "next/server"
+import { fetchUser } from "@/helpers/fetchUser"
+import mongoose from "mongoose"
+import { userModel } from "@/models/user.model"
 
 connect()
 
@@ -161,7 +160,8 @@ export async function GET(req: NextRequest) {
               'name': 1, 
               'profile_pic': 1, 
               'friend': 1, 
-              'lastChat': 1
+              'lastChat': 1,
+              'isOnline': 1
             }
           }
         ])

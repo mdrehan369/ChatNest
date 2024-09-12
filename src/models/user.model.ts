@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema({
     },
     githubId: {
         type: String
+    },
+    isOnline: {
+        type: Boolean,
+        default: false
     }
 }, {timestamps: true})
 

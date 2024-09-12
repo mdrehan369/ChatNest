@@ -203,7 +203,7 @@ function ChatBox({ userId, unmount }: any) {
 
     const handleSelectedChats = async () => {
         try {
-            
+
             toast({
                 title: "Deleting chats..."
             })
@@ -231,6 +231,10 @@ function ChatBox({ userId, unmount }: any) {
         }
     }
 
+    const handleProfileView = () => {
+        router.push(`/profile?userId=${userId}`)
+    }
+
     return (
         <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
             <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
@@ -256,7 +260,7 @@ function ChatBox({ userId, unmount }: any) {
                     <DropdownMenu>
                         <DropdownMenuTrigger><BsThreeDots className="hover:bg-gray-400 rounded p-1 transition-colors duration-300 size-8" /></DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem>View {user?.name}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleProfileView()}>View {user?.name}</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => unfriend()}>Unfriend {user?.name}</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => deleteAllChats()}>Delete all chats</DropdownMenuItem>
                             <DropdownMenuItem>
@@ -336,7 +340,7 @@ export default function Home() {
     const [search, setSearch] = useState("")
     const dispatch = useAppDispatch()
 
-    useEffect(() => {
+    useEffect((): any => {
         if (!user) {
             ; (async () => {
                 try {
@@ -354,6 +358,7 @@ export default function Home() {
                 }
             })()
         }
+
     }, [])
 
     useEffect(() => {
@@ -361,6 +366,7 @@ export default function Home() {
             ; (async () => {
                 try {
                     const response = await axios.get(`/api/v1/friends/all?search=${search}`)
+                    console.log(response.data.data.friends)
                     setFriends(response.data.data.friends)
                 } catch (error) {
                     console.log(error);
@@ -377,29 +383,36 @@ export default function Home() {
 
     return (
         !loader && userState ?
-            <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4">
+            <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-[#F7F7F7]">
                 <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[1px] border-gray-400 flex flex-col items-center justify-start gap-2">
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." />
                     {
-                        friends.map((friend: any, index) => <div onClick={() => setUserId(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[1px] border-gray-400 rounded p-2 flex items-center justify-start gap-4 pl-4">
+                        friends.map((friend: any, index) => <div onClick={() => setUserId(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-[#A0D6D6] rounded p-2 flex items-center justify-start gap-4 pl-4">
                             <Avatar>
                                 <AvatarImage src={friend.profile_pic || "https://github.com/shadcn.png"} />
                                 <AvatarFallback>CN</AvatarFallback>
+
                             </Avatar>
-                            <div className="w-full flex flex-col items-start justify-center gap-0">
-                                <Highlighter
-                                    className="text-slate-900 text-xl font-semibold"
-                                    highlightStyle={{ color: "white", backgroundColor: "black" }}
-                                    searchWords={[`${search}`]}
-                                    autoEscape={true}
-                                    textToHighlight={friend.name}
-                                />
+                            <div className="w-full relative flex flex-col items-start justify-center gap-0">
+                                <div className=" flex items-center justify-start gap-2">
+                                    {
+                                        friend?.isOnline &&
+                                        <div className="w-[7px] h-[7px] rounded-full bg-green-600"></div>
+                                    }
+                                    <Highlighter
+                                        className="text-slate-900 text-xl font-semibold"
+                                        highlightStyle={{ color: "white", backgroundColor: "black" }}
+                                        searchWords={[`${search}`]}
+                                        autoEscape={true}
+                                        textToHighlight={friend.name}
+                                    />
+                                </div>
                                 {/* <span className="text-xl font-semibold text-slate-800">{friend.name}</span> */}
                                 <div className="w-full flex items-center justify-between text-sm text-gray-600 font-medium italic">
                                     {
                                         friend.lastChat &&
                                         <>
-                                            <span>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
+                                            <span className={!friend.lastChat.seen && friend.lastChat.from === userId ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
                                             <span>{ISOtoTime(friend.lastChat.createdAt)}</span>
                                         </>
                                     }
@@ -411,8 +424,8 @@ export default function Home() {
                 </div>
                 {
                     userId != "" ?
-                    <ChatBox userId={userId} unmount={unmount} key={Date.now()} />
-                    : <NoChat />
+                        <ChatBox userId={userId} unmount={unmount} key={Date.now()} />
+                        : <NoChat />
                 }
             </main>
             : <Loading />
