@@ -1,6 +1,7 @@
+import { IPreferences } from "@/types/preferences.types";
 import mongoose from "mongoose";
 
-const preferencesSchema = new mongoose.Schema({
+const preferencesSchema = new mongoose.Schema<IPreferences>({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -24,5 +25,5 @@ const preferencesSchema = new mongoose.Schema({
     ]
 })
 
-export const preferencesModel = mongoose.models.Preferences || mongoose.model("Preferences", preferencesSchema)
+export const preferencesModel = mongoose.models.Preferences || mongoose.model<IPreferences>("Preferences", preferencesSchema)
 

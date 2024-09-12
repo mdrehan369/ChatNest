@@ -1,6 +1,7 @@
+import { IChat } from "@/types/chat.types";
 import mongoose from "mongoose";
 
-const chatSchema = new mongoose.Schema({
+const chatSchema = new mongoose.Schema<IChat>({
     type: {
         type: String,
         enum: ["TEXT", "IMAGE", "VIDEO", "PDF"],
@@ -25,4 +26,4 @@ const chatSchema = new mongoose.Schema({
     }
 }, {timestamps: true})
 
-export const chatModel = mongoose.models.Chat || mongoose.model("Chat", chatSchema);
+export const chatModel = mongoose.models.Chat || mongoose.model<IChat>("Chat", chatSchema);

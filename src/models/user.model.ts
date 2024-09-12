@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { IUser, IUserMethods, UserModel } from "@/types/user.types";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>({
     username: {
         type: String,
         unique: true,
@@ -30,10 +31,6 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     profile_pic: {
-        type: String,
-        default: ""
-    },
-    cover_pic: {
         type: String,
         default: ""
     },
@@ -71,12 +68,12 @@ userSchema.methods.generateAccessToken = function (): string {
     })
 }
 
-userSchema.methods.verifyAccessToken = function (token: string): jwt.JwtPayload | boolean | null | string {
+userSchema.methods.verifyAccessToken = function (token: string): jwt.JwtPayload | null | string {
     if(jwt.verify(token, process.env.JWT_SECRET_KEY || "")) {
         const decodedToken = jwt.decode(token);
         return decodedToken;
     } else {
-        return false;
+        return null;
     }
 }
 
@@ -84,4 +81,4 @@ userSchema.methods.verifyPassword = async function (password: string) : Promise<
     return await bcryptjs.compare(password, this.password);
 }
 
-export const userModel = mongoose.models.User || mongoose.model("User", userSchema);
+export const userModel = mongoose.models.User || mongoose.model<IUser, UserModel>("User", userSchema);

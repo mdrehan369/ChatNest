@@ -1,6 +1,7 @@
+import { IFriend } from "@/types/friend.types";
 import mongoose from "mongoose";
 
-const friendSchema = new mongoose.Schema({
+const friendSchema = new mongoose.Schema<IFriend>({
     sender: {
         type: mongoose.Schema.Types.ObjectId, // Request Sender
         ref: "User"
@@ -15,4 +16,4 @@ const friendSchema = new mongoose.Schema({
     }
 })
 
-export const friendModel = mongoose.models.Friend || mongoose.model("Friend", friendSchema);
+export const friendModel = mongoose.models.Friend || mongoose.model<IFriend>("Friend", friendSchema);
