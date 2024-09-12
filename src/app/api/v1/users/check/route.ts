@@ -2,6 +2,8 @@ import { CustomResponse } from "@/helpers/customResponse";
 import { NextRequest } from "next/server";
 import { connect } from "@/helpers/connectDB";
 import { userModel } from "@/models/user.model";
+import { HydratedDocument } from "mongoose";
+import { IUser } from "@/types/user.types";
 
 connect();
 
@@ -16,12 +18,12 @@ export async function GET(req: NextRequest) {
         }
     
         if(username) {
-            const user = await userModel.findOne({username})
+            const user: HydratedDocument<IUser> = await userModel.findOne({username}).exec()
             if(user) returnObj.username = false
         }
     
         if(email) {
-            const user = await userModel.findOne({email})
+            const user: HydratedDocument<IUser> = await userModel.findOne({email}).exec()
             if(user) returnObj.email = false
         }
     

@@ -2,8 +2,10 @@ import { friendModel } from "@/models/friend.model";
 import { CustomResponse } from "@/helpers/customResponse";
 import { connect } from "@/helpers/connectDB";
 import { NextRequest } from "next/server";
-import jwt from "jsonwebtoken"
+import jwt, { JwtPayload } from "jsonwebtoken"
 import { chatModel } from "@/models/chat.model";
+import { HydratedDocument } from "mongoose";
+import { IFriend } from "@/types/friend.types";
 
 connect()
 
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         if(!sender || !acceptor) return CustomResponse(400, {}, "Some fields are missing")
 
-        const areFriends = await friendModel.findOne({sender, acceptor})
+        const areFriends: HydratedDocument<IFriend> = await friendModel.findOne({sender, acceptor}).exec()
 
         if(areFriends) return CustomResponse(403, {}, "Already friends")
 
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
 
         if(!sender || !acceptor) return CustomResponse(400, {}, "Some fields are missing")
         
-        const coll: any = await friendModel.findOne({sender, acceptor: acceptor.id})
+        const coll: HydratedDocument<IFriend> = await friendModel.findOne({sender, acceptor: acceptor.id}).exec()
         if(!coll) return CustomResponse(400, {}, "No collection found")
 
         coll.accepted = true
@@ -74,9 +76,9 @@ export async function DELETE(req: NextRequest) {
 
         if(!sender || !acceptor) return CustomResponse(400, {}, "Some fields are missing")
         
-        const coll: any = await friendModel.findOne({
+        const coll: HydratedDocument<IFriend> = await friendModel.findOne({
             $or: [{ sender: sender.id, acceptor }, { acceptor: sender.id, sender: acceptor }]
-        })
+        }).exec()
         if(!coll) return CustomResponse(400, {}, "No collection found")
 
         await coll.deleteOne()

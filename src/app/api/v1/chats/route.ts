@@ -4,6 +4,8 @@ import { NextRequest } from "next/server"
 import { CustomResponse } from "@/helpers/customResponse"
 import { chatModel } from "@/models/chat.model"
 import jwt from "jsonwebtoken"
+import { HydratedDocument } from "mongoose"
+import { IChat } from "@/types/chat.types"
 
 connect()
 
@@ -25,12 +27,12 @@ export async function GET(req: NextRequest) {
         if (!user) return CustomResponse(400, {}, "No user found")
         const decodedToken: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
 
-        const chats = await chatModel.find({
+        const chats: Array<HydratedDocument<IChat>> = await chatModel.find({
             $or: [
                 { from: user._id, to: decodedToken.id },
                 { from: decodedToken.id, to: user._id },
             ]
-        }).sort("createdAt")
+        }).sort("createdAt").exec()
 
         await chatModel.updateMany({
             $or: [
@@ -51,18 +53,11 @@ export async function GET(req: NextRequest) {
     }
 }
 
-type Chats = {
-    from: string,
-    to: string,
-    content: string,
-    createdAt: string | undefined
-}
-
 export async function POST(req: NextRequest) {
     try {
 
         const body = await req.json()
-        const chats: [Chats] = body.chats
+        const chats: Array<HydratedDocument<IChat>> = body.chats
         if (!chats.length) return CustomResponse(400, {}, "No chats given")
 
         await chatModel.insertMany(chats)

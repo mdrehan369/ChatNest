@@ -3,6 +3,8 @@ import { userModel } from "@/models/user.model";
 import { connect } from "@/helpers/connectDB";
 import { CustomResponse } from "@/helpers/customResponse";
 import { cookies } from "next/headers";
+import { HydratedDocument } from "mongoose";
+import { IUser, IUserMethods } from "@/types/user.types";
 
 connect();
 
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
             "message": "Please fill all the required fields"
         }, "Some fields are missing")
 
-        const user = await userModel.findOne({$or: [{username: usernameOrEmail}, {email: usernameOrEmail}]})
+        const user: HydratedDocument<IUser, IUserMethods> = await userModel.findOne({$or: [{username: usernameOrEmail}, {email: usernameOrEmail}]}).exec()
         if(!user) return CustomResponse(403, {
             "title": "No User Found!",
             "message": "Please enter the correct username or email or signup"
