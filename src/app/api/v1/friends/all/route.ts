@@ -10,7 +10,7 @@ connect()
 export async function GET(req: NextRequest) {
     try {
 
-        const user = await fetchUser(req.cookies.get("accessToken")?.value!)
+        const user = await fetchUser()
         const search = req.nextUrl.searchParams.get("search") || ""
         const friends = await userModel.aggregate([
           {

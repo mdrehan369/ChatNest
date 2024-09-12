@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { CustomResponse } from "@/helpers/customResponse";
-import { fetchUser } from "@/helpers/fetchUser";
+import { fetchUser, getDecodedToken } from "@/helpers/fetchUser";
 import { preferencesModel } from "@/models/preferences.model";
 import { uploadFile } from "@/helpers/upload";
-import jwt from "jsonwebtoken"
 import { deleteImage } from "@/helpers/cloudinary";
 import mongoose, { HydratedDocument } from "mongoose";
 import { IPreferences } from "@/types/preferences.types";
+import { IUser } from "@/types/user.types";
 
 // Updates the wallpaper
 // upload via formdata with name 'file'
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const formData = await req.formData()
-        const user: any = await fetchUser(req.cookies.get("accessToken")?.value!)
+        const user: HydratedDocument<IUser> = await fetchUser()
         let userPreference: HydratedDocument<IPreferences> = await preferencesModel.findOne({ user: user._id }).exec()
 
         if (!userPreference) {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     try {
-        const user: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
+        const user: any = await getDecodedToken()
         const preference: HydratedDocument<IPreferences> = await preferencesModel.findOne({ user: user._id }).exec()
         return CustomResponse(200, preference, "Fetched")
     } catch (err: any) {

@@ -3,9 +3,10 @@ import { userModel } from "@/models/user.model"
 import { NextRequest } from "next/server"
 import { CustomResponse } from "@/helpers/customResponse"
 import { chatModel } from "@/models/chat.model"
-import jwt from "jsonwebtoken"
 import { HydratedDocument } from "mongoose"
 import { IChat } from "@/types/chat.types"
+import { getDecodedToken } from "@/helpers/fetchUser"
+import { JwtDecodedToken } from "@/types/user.types"
 
 connect()
 
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
         if (!userId) return CustomResponse(400, {}, "No user id found")
         const user = await userModel.findById(userId)
         if (!user) return CustomResponse(400, {}, "No user found")
-        const decodedToken: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
+        const decodedToken: JwtDecodedToken = await getDecodedToken()
 
         const chats: Array<HydratedDocument<IChat>> = await chatModel.find({
             $or: [
@@ -75,7 +76,7 @@ export async function DELETE(req: NextRequest) {
     try {
 
         const user = req.nextUrl.searchParams.get("user")
-        const loggeduser: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
+        const loggeduser: JwtDecodedToken = await getDecodedToken()
 
         const chats: string | null = req.nextUrl.searchParams.get("chats")
         if (chats) {

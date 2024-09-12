@@ -3,7 +3,8 @@ import { CustomResponse } from "@/helpers/customResponse"
 import { connect } from "@/helpers/connectDB"
 import { NextRequest } from "next/server"
 import mongoose from "mongoose"
-import jwt from "jsonwebtoken"
+import { JwtDecodedToken } from "@/types/user.types"
+import { getDecodedToken } from "@/helpers/fetchUser"
 
 connect()
 
@@ -14,8 +15,7 @@ export async function GET(req: NextRequest) {
     const limit = Number(req.nextUrl.searchParams.get("limit")) || 10
     const search = req.nextUrl.searchParams.get("search")
 
-    const token = req.cookies.get("accessToken")?.value
-    const decodedToken: any = jwt.verify(token!, process.env.JWT_SECRET_KEY!)
+    const decodedToken: JwtDecodedToken = await getDecodedToken()
 
     // const users = await userModel.find({}).skip(page*limit).limit(limit)
     const users = await userModel.aggregate([

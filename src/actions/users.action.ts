@@ -2,24 +2,14 @@
 
 import { Data } from "@/app/(main)/profile/page"
 import { userModel } from "@/models/user.model"
-import { UserProfileData } from "@/types/user.types"
-import { cookies } from "next/headers"
-import jwt from "jsonwebtoken"
+import { IUser, JwtDecodedToken, UserProfileData } from "@/types/user.types"
+import { getDecodedToken } from "@/helpers/fetchUser"
 
-export const getUser = async (userId: string) => {
+export const getUser = async (userId: string): Promise<IUser | null | undefined> => {
     try {
         if(userId.length === 0) return null
-        const response = await userModel.findById(userId).select("-password")
-        if(!response) return null
-
-        const user: UserProfileData = {
-            username: response.username,
-            email: response.email,
-            name: response.name,
-            isOnline: response.isOnline,
-            profile_pic: response.profile_pic,
-            bio: response.bio
-        }
+        const user: IUser = await userModel.findById(userId).select("-password").exec()
+        if(!user) return null
         return user
     } catch (err) {
         console.log(err)
@@ -28,12 +18,7 @@ export const getUser = async (userId: string) => {
 
 export const updateUser = async (data: Data) => {
     try {
-        const token = cookies().get("accessToken")?.value
-        if(!token) {
-            console.log("No active session")
-            return null
-        }
-        const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET_KEY!)
+        const decodedToken: JwtDecodedToken = await getDecodedToken()
         await userModel.findByIdAndUpdate(decodedToken.id!, {...data})
         return true
     } catch (err) {

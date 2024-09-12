@@ -1,14 +1,15 @@
 import { CustomResponse } from "@/helpers/customResponse"
 import { NextRequest } from "next/server"
-import jwt from "jsonwebtoken"
 import { preferencesModel } from "@/models/preferences.model"
 import { deleteImage } from "@/helpers/cloudinary"
+import { getDecodedToken } from "@/helpers/fetchUser"
+import { JwtDecodedToken } from "@/types/user.types"
 
 
 export async function GET(req: NextRequest) {
     try {
         const userId = req.nextUrl.searchParams.get("user")
-        const loggedUser: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
+        const loggedUser: JwtDecodedToken = await getDecodedToken()
 
         if(!loggedUser || !userId) return CustomResponse(400, {}, "Some fields are missing")
 
@@ -32,7 +33,7 @@ export async function DELETE(req: NextRequest) {
     try {
 
         const userId = req.nextUrl.searchParams.get("user")
-        const loggedUser: any = jwt.verify(req.cookies.get("accessToken")?.value!, process.env.JWT_SECRET_KEY!)
+        const loggedUser: JwtDecodedToken = await getDecodedToken()
 
         if(!loggedUser || !userId) return CustomResponse(400, {}, "Some fields are missing")
 

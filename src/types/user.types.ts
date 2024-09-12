@@ -29,3 +29,8 @@ export type UserProfileData = {
     isOnline: boolean,
     bio: string
 }
+
+export interface JwtDecodedToken extends jwt.JwtPayload {
+    id: string
+    username: string,
+}
