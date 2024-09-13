@@ -1,14 +1,37 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useAppSelector } from "@/redux/hooks"
+import { useAppDispatch, useAppSelector } from "@/redux/hooks"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import axios from "axios"
+import { logout } from "@/redux/features/users/userSlice"
+import { CldImage } from "next-cloudinary"
+
 
 export default function Header() {
 
     const user = useAppSelector(state => state.user.user)
     const router = useRouter()
+    const dispatch = useAppDispatch()
+
+    const handleLogout = async () => {
+        try {
+            await axios.get("/api/v1/users/logout")
+            dispatch(logout())
+            router.push("/login")
+        } catch (err) {
+            console.log(err)
+        }
+    }
 
     return (
         <header className="w-full flex items-center justify-between  border-b-2 border-gray-300">
@@ -23,10 +46,19 @@ export default function Header() {
                 </ul>
             </nav>
             <div className="w-[20%] flex items-center justify-end px-6 py-3">
-                <Avatar onClick={() => router.push("/profile")}>
-                    <AvatarImage src={user?.profile_pic || "https://github.com/shadcn.png"} />
-                    <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
+                <DropdownMenu>
+                    <DropdownMenuTrigger>
+                        <Avatar className=" hover:border-[1px] border-gray-500">
+                            <CldImage width={100} height={100} alt="" className="object-cover" src={user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} />
+                            <AvatarFallback>CN</AvatarFallback>
+                        </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>Log Out</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </header>
     )

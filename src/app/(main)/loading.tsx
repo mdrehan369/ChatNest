@@ -1,7 +1,8 @@
+import { twMerge } from "tailwind-merge";
 
-export default function Loading() {
+export default function Loading({ className="" }) {
     return (
-        <div aria-label="Loading..." role="status" className="w-[100vw] h-[90vh] flex justify-center items-center space-x-2">
+        <div aria-label="Loading..." role="status" className={twMerge("w-[100vw] h-[90vh] flex justify-center items-center space-x-2", className)}>
             <svg className="h-12 w-12 animate-spin stroke-slate-700" viewBox="0 0 256 256">
                 <line x1="128" y1="32" x2="128" y2="64" strokeLinecap="round" strokeLinejoin="round" strokeWidth="24"></line>
                 <line x1="195.9" y1="60.1" x2="173.3" y2="82.7" strokeLinecap="round" strokeLinejoin="round"

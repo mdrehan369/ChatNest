@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -60,15 +59,6 @@ export default function Login() {
 
     return (
         <div className="w-[100vw] h-[100vh] flex flex-col items-center justify-center bg-[f1f1f1]">
-            
-            {error && <Alert variant={"destructive"} className="w-[25%] absolute top-24 animate-appear">
-                <BsExclamationTriangle className=" text-destructive" />
-
-                <AlertTitle className="">{error.title}</AlertTitle>
-                <AlertDescription>
-                    {error.message}
-                </AlertDescription>
-            </Alert>}
 
             <Form {...form}>
                 <h1 className="text-left w-[25%] p-2 font-bold text-2xl">Sign In</h1>
@@ -107,7 +97,17 @@ export default function Login() {
                         )}
                     />
                     <Link href={'/signup'} className="text-sm w-fit self-start text-blue-500 hover:underline">New user? Sign Up</Link>
-                    <Button variant={"default"} type="submit" className="self-end">Sign In</Button>
+
+                    {error && <Alert variant={"destructive"} className="w-full">
+                        <BsExclamationTriangle className=" text-destructive" />
+
+                        <AlertTitle className="">{error.title}</AlertTitle>
+                        <AlertDescription>
+                            {error.message}
+                        </AlertDescription>
+                    </Alert>}
+
+                    <Button variant={"default"} type="submit" className="self-end" disabled={!form.formState.isValid || form.formState.isSubmitting}>Sign In</Button>
                 </form>
             </Form>
         </div>

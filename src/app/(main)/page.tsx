@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { login } from "@/redux/features/users/userSlice";
 import Loading from "./loading"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import io from "socket.io-client"
@@ -22,6 +22,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { uploadPreferences } from "@/redux/features/users/preferencesSlice";
 import Highlighter from "react-highlight-words";
 import { MessageCircleMore, Trash2, X } from "lucide-react";
+import { CldImage } from "next-cloudinary";
+import { Separator } from "@/components/ui/separator";
 
 
 function ISOtoTime(isoDate: any) {
@@ -46,7 +48,7 @@ function ChatBox({ userId, unmount }: any) {
     const [message, setMessage] = useState("")
     const [socket, setSocket]: any = useState(null)
     const roomId = useRef("")
-    const loggedUserId = useAppSelector(state => state.user.user._id)
+    const loggedUser = useAppSelector(state => state.user.user)
     const [user, setUser]: any = useState(null)
     const router = useRouter()
     const [wallpaper, setWallpaper]: any = useState("")
@@ -55,6 +57,7 @@ function ChatBox({ userId, unmount }: any) {
     const sentAudio = useRef(new Audio("/sounds/sent.mp3"))
     const recieveAudio = useRef(new Audio("/sounds/recieve.mp3"))
     const [selectedChats, setSelectedChats]: any = useState([])
+    const [loader, setLoader] = useState(true)
 
     useEffect((): any => {
         ; (async () => {
@@ -70,6 +73,8 @@ function ChatBox({ userId, unmount }: any) {
 
             } catch (err) {
                 console.log(err)
+            } finally {
+                setLoader(false)
             }
         })()
 
@@ -114,7 +119,7 @@ function ChatBox({ userId, unmount }: any) {
     const sendMessage = () => {
         if (message === "") return
         const data = {
-            from: loggedUserId,
+            from: loggedUser?._id,
             to: userId,
             content: message,
             createdAt: new Date().toISOString()
@@ -236,11 +241,12 @@ function ChatBox({ userId, unmount }: any) {
     }
 
     return (
+        !loader ?
         <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
             <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
                 <div className="flex items-center justify-start gap-3">
                     <Avatar>
-                        <AvatarImage src={"https://github.com/shadcn.png"} />
+                        <CldImage src={user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
                         <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
                     <div className=" flex flex-col items-start justify-center gap-0">
@@ -289,7 +295,7 @@ function ChatBox({ userId, unmount }: any) {
                 <div className="w-full flex flex-col items-start justify-end p-3 gap-1 relative z-0 min-h-full" id="inner">
                     {chats.concat(newChats).map((chat: any, index) => <div key={index} className={` w-fit flex items-center justify-start ${chat.from === userId ? ' flex-row self-start' : ' flex-row-reverse self-end'} gap-2 px-2 `}>
                         <Avatar>
-                            <AvatarImage src={"https://github.com/shadcn.png"} />
+                            <CldImage src={chat.to === userId ? (loggedUser?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2") : (user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2")} width={100} height={100} alt="" className=" object-cover" />
                             <AvatarFallback>CN</AvatarFallback>
                         </Avatar>
                         {
@@ -325,6 +331,7 @@ function ChatBox({ userId, unmount }: any) {
                 </Button>
             </div>
         </div>
+        : <Loading className="w-[77vw] h-[90vh]" />
     )
 }
 
@@ -386,10 +393,11 @@ export default function Home() {
             <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-[#F7F7F7]">
                 <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[1px] border-gray-400 flex flex-col items-center justify-start gap-2">
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." />
+                    <Separator className=" bg-gray-300 h-[2px]" />
                     {
-                        friends.map((friend: any, index) => <div onClick={() => setUserId(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-[#A0D6D6] rounded p-2 flex items-center justify-start gap-4 pl-4">
+                        friends.map((friend: any, index) => <div onClick={() => setUserId(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-gray-200 rounded p-2 flex items-center justify-start gap-4 pl-4">
                             <Avatar>
-                                <AvatarImage src={friend.profile_pic || "https://github.com/shadcn.png"} />
+                                <CldImage src={friend.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
                                 <AvatarFallback>CN</AvatarFallback>
 
                             </Avatar>
@@ -412,7 +420,7 @@ export default function Home() {
                                     {
                                         friend.lastChat &&
                                         <>
-                                            <span className={!friend.lastChat.seen && friend.lastChat.from === userId ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
+                                            <span className={!friend.lastChat.seen && friend.lastChat.to === userState._id ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
                                             <span>{ISOtoTime(friend.lastChat.createdAt)}</span>
                                         </>
                                     }

@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { CldImage } from "next-cloudinary";
 
 // import Buttonloader from "@/components/ButtonLoader"
 
@@ -128,7 +129,7 @@ export default function Explore() {
                         users.map((user: any, index) => <div className="w-full p-4 flex items-center justify-between border-[1px] hover:bg-gray-200 cursor-pointer transition-colors duration-500 border-gray-400 rounded" key={index}>
                             <div className="flex items-center justify-center gap-4">
                                 <Avatar>
-                                    <AvatarImage src={user.profile_pic || "https://github.com/shadcn.png"} />
+                                    <CldImage width={100} height={100} alt="" className=" object-cover" src={user.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} />
                                     <AvatarFallback>CN</AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col items-start justify-between">
