@@ -16,8 +16,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import Loading from "../loading"
-import { IUser } from "@/types/user.types"
+import { IUser, UserProfileData } from "@/types/user.types"
 import { updateProfile } from "@/redux/features/users/userSlice"
+import { HydratedDocument } from "mongoose"
 
 export type Data = {
     bio?: string,
@@ -28,7 +29,7 @@ export default function Profile() {
 
     const userId = useSearchParams().get("userId") || null
     const loggedInUser = useAppSelector(state => state.user.user)
-    const [user, setUser] = useState<IUser | null | undefined>(loggedInUser)
+    const [user, setUser] = useState<HydratedDocument<IUser> | undefined | null>(loggedInUser)
     const [data, setData] = useState<Data>({
         bio: user?.bio || "",
         profile_pic: user?.profile_pic || ""
@@ -57,10 +58,18 @@ export default function Profile() {
     useEffect(() => {
         ; (async () => {
             try {
+                console.log(userId)
                 setLoader(true)
                 if (userId) {
                     const response = await getUser(userId)
-                    setUser(response)
+                    if (response !== null) {
+                        const user = JSON.parse(response)
+                        setUser(user)
+                        setData({
+                            bio: user?.bio,
+                            profile_pic: user?.profile_pic
+                        })
+                    }
                 } else {
                     setUser(loggedInUser)
                     setData({
@@ -85,12 +94,12 @@ export default function Profile() {
                             {({ open, results }: any) => {
                                 useEffect(() => {
                                     console.log(results)
-                                    if(results?.event === "success") {
-                                        setData({...data, profile_pic: results?.info.public_id})
+                                    if (results?.event === "success") {
+                                        setData({ ...data, profile_pic: results?.info.public_id })
                                     }
                                 }, [results])
                                 return (
-                                    <CldImage onClick={() => open()} alt="" width={200} height={200} src={data?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} className="bg-gray-300 rounded-full p-2 w-[200px] h-[200px] object-cover" />
+                                    <CldImage onClick={() => loggedInUser?._id === user?._id && open()} alt="" width={200} height={200} src={data?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} className="bg-gray-300 rounded-full p-2 w-[200px] h-[200px] object-cover" />
                                 )
                             }
                             }
@@ -101,7 +110,7 @@ export default function Profile() {
                         <p className="text-sm font-medium text-gray-500">{user?.email}</p>
                         <p className="text-sm font-medium text-gray-500">@{user?.username}</p>
                         <label htmlFor="bio">Bio</label>
-                        <Textarea value={data.bio} autoComplete={"true"} onChange={(e) => setData({ ...data, bio: e.target.value })} className="resize-none" id="bio" />
+                        <Textarea value={data.bio} autoComplete={"true"} disabled={loggedInUser?._id !== user?._id} onChange={(e) => setData({ ...data, bio: e.target.value })} className="resize-none" id="bio" />
                     </CardContent>
                     <CardFooter>
                         {!userId && <Button onClick={handleSave}>Save</Button>}

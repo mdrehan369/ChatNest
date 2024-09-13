@@ -244,7 +244,7 @@ function ChatBox({ userId, unmount }: any) {
         !loader ?
         <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
             <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
-                <div className="flex items-center justify-start gap-3">
+                <div className="flex items-center justify-start gap-3" onClick={() => router.push(`/profile?userId=${userId}`)}>
                     <Avatar>
                         <CldImage src={user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
                         <AvatarFallback>CN</AvatarFallback>
@@ -388,6 +388,16 @@ export default function Home() {
         setUserId("")
     }
 
+    const openChats = (id: string) => {
+        setUserId(id)
+        setFriends((prev: any) => prev.map((friend: any) => {
+            if(friend._id === id) {
+                friend.lastChat.seen = true
+            }
+            return friend
+        }))
+    }
+
     return (
         !loader && userState ?
             <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-[#F7F7F7]">
@@ -395,11 +405,10 @@ export default function Home() {
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." />
                     <Separator className=" bg-gray-300 h-[2px]" />
                     {
-                        friends.map((friend: any, index) => <div onClick={() => setUserId(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-gray-200 rounded p-2 flex items-center justify-start gap-4 pl-4">
+                        friends.map((friend: any, index) => <div onClick={() => openChats(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-gray-200 rounded p-2 flex items-center justify-start gap-4 pl-4">
                             <Avatar>
                                 <CldImage src={friend.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
                                 <AvatarFallback>CN</AvatarFallback>
-
                             </Avatar>
                             <div className="w-full relative flex flex-col items-start justify-center gap-0">
                                 <div className=" flex items-center justify-start gap-2">
