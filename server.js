@@ -22,6 +22,23 @@ app.prepare().then(() => {
     const globalRoomID = "GLOBAL"
 
     io.on("connection", async (socket) => {
+
+
+        /*
+        1. If one user is there, save all chats
+        2. If two users came, then save chats locally and save them in continuous period or when any one user exits the socket
+        3. Track the chats which are already saved in the database
+
+        RoomsMap => roomId -> object{
+                chats: [],
+                size: number,
+            }
+        
+        socketToRoomsMap => socketId -> roomId
+
+        */
+
+
         console.log(chalk.greenBright("connected to socket!", socket.id))
 
         socket.on("joinGlobalRoom", () => {
@@ -31,11 +48,10 @@ app.prepare().then(() => {
         socket.on("joinRoom", (data) => {
             socket.join(data)
             socketToRoomsMap.set(socket.id, data)
-            if(roomsMap.has(data)) {
+            if (roomsMap.has(data)) {
                 let prev = roomsMap.get(data)
                 prev.size += 1
                 roomsMap.set(data, prev)
-                socket.emit("loadChats", roomsMap.get(data)?.chats)
             } else {
                 roomsMap.set(data, {
                     chats: [],
@@ -46,10 +62,10 @@ app.prepare().then(() => {
             console.log(chalk.blueBright("room joined", data))
             // socket.join(data)
         })
-        
+
         socket.on("sendMessage", (message) => {
             const roomId = socketToRoomsMap.get(socket.id)
-            if(roomsMap.get(roomId)?.size == 1) {
+            if (roomsMap.get(roomId)?.size == 1) {
                 axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: message }).then(() => {
                     console.log(chalk.yellowBright("chats saved"))
                 })
@@ -70,25 +86,19 @@ app.prepare().then(() => {
             console.log(chalk.redBright("Socket ", socket.id, " disconnected due to ", reason))
 
             const roomId = socketToRoomsMap.get(socket.id)
-            if(!roomId) return
-            if(roomsMap.get(roomId)?.size == 1){
-                try {
-                    if(roomsMap.get(roomId).chats.length != 0) {
-                        axios.post(`${process.env.SERVER}/api/v1/chats`, {chats: roomsMap.get(roomId).chats}).then(() => {
-                            console.log(chalk.yellowBright("chats saved"))
-                        })
-                    }
-                } catch (err) {
-                    console.log("error ", err)
-                } finally {
-                    socketToRoomsMap.delete(socket.id)
-                    roomsMap.delete(roomId)
-                }
+            if (!roomId) return
+
+            if (roomsMap.get(roomId).chats.length != 0) {
+                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: roomsMap.get(roomId).chats }).then(() => {
+                    console.log(chalk.yellowBright("chats saved"))
+                })
+                roomsMap.get(roomId).chats.length = 0
+            }
+            socketToRoomsMap.delete(socket.id)
+            if (roomsMap.get(roomId)?.size == 1) {
+                roomsMap.delete(roomId)
             } else {
-                socketToRoomsMap.delete(socket.id)
-                const prev = roomsMap.get(roomId)
-                prev.size -= 1
-                roomsMap.set(roomId, prev)
+                roomsMap.get(roomId).size -= 1
             }
 
         })
