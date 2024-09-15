@@ -24,6 +24,9 @@ import Highlighter from "react-highlight-words";
 import { MessageCircleMore, Trash2, X } from "lucide-react";
 import { CldImage } from "next-cloudinary";
 import { Separator } from "@/components/ui/separator";
+import { IChat } from "@/types/chat.types";
+import { HydratedDocument } from "mongoose";
+import { IUser } from "@/types/user.types";
 
 
 function ISOtoTime(isoDate: any) {
@@ -242,96 +245,96 @@ function ChatBox({ userId, unmount }: any) {
 
     return (
         !loader ?
-        <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
-            <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
-                <div className="flex items-center justify-start gap-3" onClick={() => router.push(`/profile?userId=${userId}`)}>
-                    <Avatar>
-                        <CldImage src={user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
-                        <AvatarFallback>CN</AvatarFallback>
-                    </Avatar>
-                    <div className=" flex flex-col items-start justify-center gap-0">
-                        <span className="text-xl text-black font-medium">{user?.name}</span>
-                        <span className="text-sm font-bold text-gray-500 italic">@{user?.username}</span>
-                        <span id="status" className="text-xs font-semibold absolute bottom-1 text-gray-500 italic"></span>
-                    </div>
-                </div>
-                <input
-                    type="file"
-                    id="wallpaper"
-                    className="hidden"
-                    name="wallpaper"
-                    onChange={(e) => { updateWallpaper(e.currentTarget.files![0]) }} />
-
-                <div className="flex items-center justify-center gap-6">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger><BsThreeDots className="hover:bg-gray-400 rounded p-1 transition-colors duration-300 size-8" /></DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleProfileView()}>View {user?.name}</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => unfriend()}>Unfriend {user?.name}</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => deleteAllChats()}>Delete all chats</DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <label htmlFor="wallpaper">Wallpapers</label>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Search</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => removeWallpaper()}>Remove wallpaper</DropdownMenuItem>
-                            <DropdownMenuItem>Media</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300" onClick={() => unmount()}><X /></div>
-
-                    {
-                        selectedChats.length !== 0 &&
-                        <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300">
-                            <Trash2 onClick={() => handleSelectedChats()} />
-                        </div>
-                    }
-                </div>
-
-            </div>
-            <div className=" overflow-y-scroll flex flex-col-reverse h-[80%] w-full relative" id="textBox"
-                style={{ backgroundImage: `url("${wallpaper}")`, backgroundSize: "100%", backgroundRepeat: "no-repeat", objectFit: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}
-            >
-                <div className="w-full flex flex-col items-start justify-end p-3 gap-1 relative z-0 min-h-full" id="inner">
-                    {chats.concat(newChats).map((chat: any, index) => <div key={index} className={` w-fit flex items-center justify-start ${chat.from === userId ? ' flex-row self-start' : ' flex-row-reverse self-end'} gap-2 px-2 `}>
+            <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
+                <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
+                    <div className="flex items-center justify-start gap-3" onClick={() => router.push(`/profile?userId=${userId}`)}>
                         <Avatar>
-                            <CldImage src={chat.to === userId ? (loggedUser?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2") : (user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2")} width={100} height={100} alt="" className=" object-cover" />
+                            <CldImage src={user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
                             <AvatarFallback>CN</AvatarFallback>
                         </Avatar>
-                        {
-                            chat.from === userId ?
-                                <div className=" bg-gray-200 text-black px-4 py-1 rounded flex flex-col items-start justify-between">
-                                    <span>{chat.content}</span>
-                                    <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
-                                </div>
-                                : <div onDoubleClick={() => (selectedChats.indexOf(chat._id) == -1) ? setSelectedChats((prev: any): any => [...prev, chat._id]) : setSelectedChats((prev: any): any => prev.filter((ch: any) => ch !== chat._id))} className={`${selectedChats.indexOf(chat._id) === -1 ? "bg-gray-200" : "bg-blue-300"} text-black px-4 py-1 rounded flex flex-col items-end justify-between`}>
-                                    <span>{chat.content}</span>
-                                    <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
-                                </div>
-                        }
+                        <div className=" flex flex-col items-start justify-center gap-0">
+                            <span className="text-xl text-black font-medium">{user?.name}</span>
+                            <span className="text-sm font-bold text-gray-500 italic">@{user?.username}</span>
+                            <span id="status" className="text-xs font-semibold absolute bottom-1 text-gray-500 italic"></span>
+                        </div>
+                    </div>
+                    <input
+                        type="file"
+                        id="wallpaper"
+                        className="hidden"
+                        name="wallpaper"
+                        onChange={(e) => { updateWallpaper(e.currentTarget.files![0]) }} />
 
-                    </div>)}
+                    <div className="flex items-center justify-center gap-6">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger><BsThreeDots className="hover:bg-gray-400 rounded p-1 transition-colors duration-300 size-8" /></DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleProfileView()}>View {user?.name}</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => unfriend()}>Unfriend {user?.name}</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteAllChats()}>Delete all chats</DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <label htmlFor="wallpaper">Wallpapers</label>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>Search</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => removeWallpaper()}>Remove wallpaper</DropdownMenuItem>
+                                <DropdownMenuItem>Media</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300" onClick={() => unmount()}><X /></div>
+
+                        {
+                            selectedChats.length !== 0 &&
+                            <div className="hover:bg-gray-400 p-1 rounded cursor-pointer transition-colors duration-300">
+                                <Trash2 onClick={() => handleSelectedChats()} />
+                            </div>
+                        }
+                    </div>
+
+                </div>
+                <div className=" overflow-y-scroll flex flex-col-reverse h-[80%] w-full relative" id="textBox"
+                    style={{ backgroundImage: `url("${wallpaper}")`, backgroundSize: "100%", backgroundRepeat: "no-repeat", objectFit: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}
+                >
+                    <div className="w-full flex flex-col items-start justify-end p-3 gap-1 relative z-0 min-h-full" id="inner">
+                        {chats.concat(newChats).map((chat: any, index) => <div key={index} className={` w-fit flex items-center justify-start ${chat.from === userId ? ' flex-row self-start' : ' flex-row-reverse self-end'} gap-2 px-2 `}>
+                            <Avatar>
+                                <CldImage src={chat.to === userId ? (loggedUser?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2") : (user?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2")} width={100} height={100} alt="" className=" object-cover" />
+                                <AvatarFallback>CN</AvatarFallback>
+                            </Avatar>
+                            {
+                                chat.from === userId ?
+                                    <div className=" bg-gray-200 text-black px-4 py-1 rounded flex flex-col items-start justify-between">
+                                        <span>{chat.content}</span>
+                                        <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
+                                    </div>
+                                    : <div onDoubleClick={() => (selectedChats.indexOf(chat._id) == -1) ? setSelectedChats((prev: any): any => [...prev, chat._id]) : setSelectedChats((prev: any): any => prev.filter((ch: any) => ch !== chat._id))} className={`${selectedChats.indexOf(chat._id) === -1 ? "bg-gray-200" : "bg-blue-300"} text-black px-4 py-1 rounded flex flex-col items-end justify-between`}>
+                                        <span>{chat.content}</span>
+                                        <span className=" text-xs text-gray-400 self-end">{ISOtoTime(chat.createdAt)}</span>
+                                    </div>
+                            }
+
+                        </div>)}
+                    </div>
+                </div>
+                <div className=" w-full h-[10%] border-t-2 border-gray-300 flex items-center justify-between gap-2 px-10">
+                    <Input
+                        className=""
+                        placeholder="Write a message..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyPress={(e) => {
+                            if (e.key === 'Enter') sendMessage()
+                            else socket?.emit("typing", {})
+                        }} />
+                    <Button
+                        variant={"default"}
+                        onClick={() => sendMessage()}
+                    >
+                        Send
+                    </Button>
                 </div>
             </div>
-            <div className=" w-full h-[10%] border-t-2 border-gray-300 flex items-center justify-between gap-2 px-10">
-                <Input
-                    className=""
-                    placeholder="Write a message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                        if (e.key === 'Enter') sendMessage()
-                        else socket?.emit("typing", {})
-                    }} />
-                <Button
-                    variant={"default"}
-                    onClick={() => sendMessage()}
-                >
-                    Send
-                </Button>
-            </div>
-        </div>
-        : <Loading className="w-[77vw] h-[90vh]" />
+            : <Loading className="w-[77vw] h-[90vh]" />
     )
 }
 
@@ -340,11 +343,13 @@ export default function Home() {
     const router = useRouter()
 
     const user = useAppSelector(state => state.user.user)
-    const [userState, setUserState]: any = useState(user)
+    const [userState, setUserState] = useState(user)
     const [loader, setLoader] = useState(true)
     const [friends, setFriends] = useState([])
     const [userId, setUserId] = useState("")
+    const userIdRef = useRef("")
     const [search, setSearch] = useState("")
+    const [socket, setSocket]: any = useState(null)
     const dispatch = useAppDispatch()
 
     useEffect((): any => {
@@ -375,6 +380,7 @@ export default function Home() {
                     const response = await axios.get(`/api/v1/friends/all?search=${search}`)
                     console.log(response.data.data.friends)
                     setFriends(response.data.data.friends)
+                    setSocket(io())
                 } catch (error) {
                     console.log(error);
                 } finally {
@@ -384,14 +390,48 @@ export default function Home() {
         }
     }, [userState, search])
 
+    const getUserId = () => userId
+
+    useEffect(() => {
+        if (socket) {
+            socket.emit("joinGlobalRoom", "")
+            socket.on("globalMsgReceived", (message: IChat) => {
+                console.log(message)
+                console.log(userIdRef.current)
+                if (message.to.toString() === userState?._id.toString() || message.from.toString() === userState?._id.toString()) {
+                    setFriends((prev: any) => prev.map((friend: any) => {
+                        if (friend._id === message.from || friend._id === message.to) {
+                            if (userIdRef.current === friend._id) {
+                                message.seen = true
+                                console.log(message)
+                            } else {
+                                message.seen = false
+                            }
+                            friend.lastChat = message
+                            console.log(friend)
+                        }
+                        return friend
+                    }))
+                }
+            })
+        }
+
+        return () => {
+            socket?.disconnect()
+        }
+
+    }, [socket])
+
     const unmount = () => {
         setUserId("")
+        userIdRef.current = ""
     }
 
     const openChats = (id: string) => {
         setUserId(id)
+        userIdRef.current = id
         setFriends((prev: any) => prev.map((friend: any) => {
-            if(friend._id === id) {
+            if (friend._id === id) {
                 friend.lastChat.seen = true
             }
             return friend
@@ -441,7 +481,7 @@ export default function Home() {
                 </div>
                 {
                     userId != "" ?
-                        <ChatBox userId={userId} unmount={unmount} key={Date.now()} />
+                        <ChatBox userId={userId} unmount={unmount} key={userId} />
                         : <NoChat />
                 }
             </main>

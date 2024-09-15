@@ -58,10 +58,11 @@ export async function POST(req: NextRequest) {
     try {
 
         const body = await req.json()
-        const chats: Array<HydratedDocument<IChat>> = body.chats
-        if (!chats.length) return CustomResponse(400, {}, "No chats given")
+        const chats: Array<IChat> | IChat = body.chats
+        // if (typeof chats == "object" && !chats.length) return CustomResponse(400, {}, "No chats given")
 
-        await chatModel.insertMany(chats)
+        if(typeof chats == typeof []) await chatModel.insertMany(chats)
+        else await chatModel.create(chats)
 
         return CustomResponse(201, {}, "Chats Saved")
 

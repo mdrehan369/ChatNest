@@ -19,8 +19,14 @@ app.prepare().then(() => {
     const roomsMap = new Map()
     const socketToRoomsMap = new Map()
 
+    const globalRoomID = "GLOBAL"
+
     io.on("connection", async (socket) => {
         console.log(chalk.greenBright("connected to socket!", socket.id))
+
+        socket.on("joinGlobalRoom", () => {
+            socket.join(globalRoomID)
+        })
 
         socket.on("joinRoom", (data) => {
             socket.join(data)
@@ -38,13 +44,22 @@ app.prepare().then(() => {
             }
 
             console.log(chalk.blueBright("room joined", data))
+            // socket.join(data)
         })
-
+        
         socket.on("sendMessage", (message) => {
-            const prev = roomsMap.get(socketToRoomsMap.get(socket.id))
-            prev.chats.push(message)
-            roomsMap.set(socketToRoomsMap.get(socket.id), prev)
-            socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("msgRecieved", message)
+            const roomId = socketToRoomsMap.get(socket.id)
+            if(roomsMap.get(roomId)?.size == 1) {
+                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: message }).then(() => {
+                    console.log(chalk.yellowBright("chats saved"))
+                })
+            } else {
+                const prev = roomsMap.get(socketToRoomsMap.get(socket.id))
+                prev.chats.push(message)
+                roomsMap.set(socketToRoomsMap.get(socket.id), prev)
+                socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("msgRecieved", message)
+            }
+            io.to(globalRoomID).emit("globalMsgReceived", message)
         })
 
         socket.on("typing", () => {
