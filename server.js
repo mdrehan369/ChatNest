@@ -3,6 +3,7 @@ import next from "next";
 import { Server } from "socket.io";
 import axios from "axios";
 import chalk from "chalk";
+import { Redis } from "ioredis";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -11,13 +12,75 @@ const port = 3000;
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
+class RedisClient {
+    HASHNAME = "socketToRoomsMap"
+    redis = null
+
+    constructor() {
+        this.redis = new Redis({ username: "default", password: "1234" })
+    }
+
+    async addRoomId(socketId, roomId) {
+        await this.redis.hset(this.HASHNAME, socketId, roomId)
+    }
+    async delRoomId(socketId) {
+        await this.redis.hdel(this.HASHNAME, socketId)
+    }
+
+    async getRoomId(socketId) {
+        return await this.redis.hget(this.HASHNAME, socketId)
+    }
+
+    async doesRoomExists(roomId) {
+        if (await this.redis.call("JSON.OBJKEYS", roomId)) return true
+        else false
+    }
+
+    async addRoomData(roomId, data = { chats: [], size: 1 }) {
+        return await this.redis.call("JSON.SET", roomId, '$', JSON.stringify(data))
+    }
+
+    async delRoomData(roomId) {
+        return await this.redis.call("JSON.DEL", roomId)
+    }
+
+    async updateRoomData(roomId, data) {
+        await this.redis.call("JSON.MSET", roomId, '$', JSON.stringify(data))
+    }
+
+    async updateRoomSize(roomId, inc) {
+        const prev = await this.getRoom(roomId)
+        if (!prev) return null
+        prev.size = Number(prev.size) + Number(inc)
+        await this.updateRoomData(roomId, prev)
+    }
+
+    async clearRoomChats(roomId) {
+        const prev = await this.getRoom(roomId)
+        if (!prev) return null
+        prev.chats.length = 0
+        await this.updateRoomData(roomId, prev)
+    }
+
+    async getRoom(roomId) {
+        const data = await this.redis.call("JSON.GET", roomId)
+        return JSON.parse(data)
+    }
+
+    async addChat(roomId, message) {
+        const prev = await this.getRoom(roomId)
+        message.seen = true
+        prev.chats.push(message)
+        await this.updateRoomData(roomId, prev)
+    }
+}
+
 app.prepare().then(() => {
     const httpServer = createServer(handler);
 
     const io = new Server(httpServer);
 
-    const roomsMap = new Map()
-    const socketToRoomsMap = new Map()
+    const redis = new RedisClient()
 
     const globalRoomID = "GLOBAL"
 
@@ -40,66 +103,74 @@ app.prepare().then(() => {
 
 
         console.log(chalk.greenBright("connected to socket!", socket.id))
+        let interval = null
 
         socket.on("joinGlobalRoom", () => {
             socket.join(globalRoomID)
         })
 
-        socket.on("joinRoom", (data) => {
+        socket.on("joinRoom", async (data) => {
             socket.join(data)
-            socketToRoomsMap.set(socket.id, data)
-            if (roomsMap.has(data)) {
-                let prev = roomsMap.get(data)
-                prev.size += 1
-                roomsMap.set(data, prev)
+            await redis.addRoomId(socket.id, data)
+            if (await redis.doesRoomExists(data)) {
+                await redis.updateRoomSize(data, 1)
             } else {
-                roomsMap.set(data, {
-                    chats: [],
-                    size: 1
-                })
+                await redis.addRoomData(data)
+                interval = setInterval(async () => {
+                    const room = await redis.getRoom(data)
+                    if (room?.chats?.length != 0) {
+                        const chats = room?.chats
+                        axios.post(`${process.env.SERVER}/api/v1/chats`, { chats }).then(() => {
+                            console.log(chalk.yellowBright("chats saved"))
+                        })
+                        await redis.clearRoomChats(data)
+                    }
+                }, 5000)
             }
 
             console.log(chalk.blueBright("room joined", data))
-            // socket.join(data)
         })
 
-        socket.on("sendMessage", (message) => {
-            const roomId = socketToRoomsMap.get(socket.id)
-            if (roomsMap.get(roomId)?.size == 1) {
+
+        socket.on("sendMessage", async (message) => {
+            const roomId = await redis.getRoomId(socket.id)
+            const room = await redis.getRoom(roomId)
+            if (room?.size == 1) {
                 axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: message }).then(() => {
                     console.log(chalk.yellowBright("chats saved"))
                 })
             } else {
-                const prev = roomsMap.get(socketToRoomsMap.get(socket.id))
-                prev.chats.push(message)
-                roomsMap.set(socketToRoomsMap.get(socket.id), prev)
-                socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("msgRecieved", message)
+                await redis.addChat(roomId, message)
+                socket.broadcast.to(roomId).emit("msgRecieved", message)
             }
             io.to(globalRoomID).emit("globalMsgReceived", message)
         })
 
-        socket.on("typing", () => {
-            socket.broadcast.to(socketToRoomsMap.get(socket.id)).emit("typing")
+        socket.on("typing", async () => {
+            socket.broadcast.to(await redis.getRoomId(socket.id)).emit("typing")
         })
 
-        socket.on("disconnecting", (reason) => {
+        socket.on("disconnecting", async (reason) => {
             console.log(chalk.redBright("Socket ", socket.id, " disconnected due to ", reason))
-
-            const roomId = socketToRoomsMap.get(socket.id)
+            const roomId = await redis.getRoomId(socket.id)
+            const room = await redis.getRoom(roomId)
             if (!roomId) return
 
-            if (roomsMap.get(roomId).chats.length != 0) {
-                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: roomsMap.get(roomId).chats }).then(() => {
+            if (room.chats.length != 0) {
+                const chats = room.chats
+                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats }).then(() => {
                     console.log(chalk.yellowBright("chats saved"))
                 })
-                roomsMap.get(roomId).chats.length = 0
+                await redis.clearRoomChats(roomId)
             }
-            socketToRoomsMap.delete(socket.id)
-            if (roomsMap.get(roomId)?.size == 1) {
-                roomsMap.delete(roomId)
+            await redis.delRoomId(socket.id)
+            if (room.size == 1) {
+                await redis.delRoomData(roomId)
             } else {
-                roomsMap.get(roomId).size -= 1
+                await redis.updateRoomSize(roomId, -1)
             }
+
+            clearInterval(interval)
 
         })
 
