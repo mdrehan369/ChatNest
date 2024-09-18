@@ -17,7 +17,12 @@ class RedisClient {
     redis = null
 
     constructor() {
-        this.redis = new Redis({ username: "default", password: "1234" })
+        this.redis = new Redis({
+            username: process.env.REDIS_USER,
+            password: process.env.REDIS_PASSWORD,
+            host: process.env.REDIS_HOST,
+            port: process.env.REDIS_PORT
+        })
     }
 
     async addRoomId(socketId, roomId) {

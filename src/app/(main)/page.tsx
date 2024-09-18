@@ -25,8 +25,6 @@ import { MessageCircleMore, Trash2, X } from "lucide-react";
 import { CldImage } from "next-cloudinary";
 import { Separator } from "@/components/ui/separator";
 import { IChat } from "@/types/chat.types";
-import { HydratedDocument } from "mongoose";
-import { IUser } from "@/types/user.types";
 
 
 function ISOtoTime(isoDate: any) {
@@ -38,7 +36,7 @@ function ISOtoTime(isoDate: any) {
 
 function NoChat() {
     return (
-        <div className="w-[77vw] h-[90vh] rounded border-[1px] bg-gray-100 border-gray-400 flex items-center justify-center">
+        <div className="w-[77vw] h-[90vh] rounded border-[0px] bg-gray-100 border-gray-400 flex items-center justify-center">
             <MessageCircleMore size={"200px"} className=" w-[30vw] text-gray-400" />
         </div>
     )
@@ -245,7 +243,7 @@ function ChatBox({ userId, unmount }: any) {
 
     return (
         !loader ?
-            <div className="w-[77vw] h-[90vh] rounded border-[1px] border-gray-400" id="box">
+            <div className="w-[77vw] h-[90vh] rounded border-[0px] border-gray-200" id="box">
                 <div className="w-full h-[10%] flex items-center justify-between px-8 py-4 bg-gray-300 shadow-sm border-b-[1px] border-gray-400 relative">
                     <div className="flex items-center justify-start gap-3" onClick={() => router.push(`/profile?userId=${userId}`)}>
                         <Avatar>
@@ -390,8 +388,6 @@ export default function Home() {
         }
     }, [userState, search])
 
-    const getUserId = () => userId
-
     useEffect(() => {
         if (socket) {
             socket.emit("joinGlobalRoom", "")
@@ -440,10 +436,10 @@ export default function Home() {
 
     return (
         !loader && userState ?
-            <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-[#F7F7F7]">
-                <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[1px] border-gray-400 flex flex-col items-center justify-start gap-2">
-                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." />
-                    <Separator className=" bg-gray-300 h-[2px]" />
+            <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-white">
+                <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[0px] border-gray-400 flex flex-col items-center justify-start gap-2">
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className=" border-none" />
+                    <Separator className=" bg-gray-200 h-[2px]" />
                     {
                         friends.map((friend: any, index) => <div onClick={() => openChats(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-gray-200 rounded p-2 flex items-center justify-start gap-4 pl-4">
                             <Avatar>

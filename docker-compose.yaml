@@ -1,0 +1,33 @@
+version: '1.0.0'
+
+services:
+  app:
+    build: '.'
+    container_name: 'chatnest'
+    ports:
+      - "3000:3000"
+    depends_on:
+      - "redis"
+      - "mongo"
+    volumes:
+      - ./.:/app
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/Chatnest
+      - REDIS_HOST=redis
+      - CLOUDINARY_CLOUD_NAME=
+      - CLOUDINARY_API_KEY=
+      - CLOUDINARY_API_SECRET=
+      - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+
+  redis:
+    image: 'redis/redis-stack-server'
+    ports:
+      - "6379:6379"
+    container_name: 'redis'
+
+  mongo:
+    image: 'mongo'
+    ports:
+      - "27017:27017"
+    container_name: 'mongo'
+    
