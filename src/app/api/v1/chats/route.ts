@@ -60,14 +60,14 @@ export async function POST(req: NextRequest) {
         const body = await req.json()
         const chats: Array<IChat> | IChat = body.chats
         // if (typeof chats == "object" && !chats.length) return CustomResponse(400, {}, "No chats given")
-
+        console.log(chats)
         if(typeof chats == typeof []) await chatModel.insertMany(chats)
         else await chatModel.create(chats)
 
         return CustomResponse(201, {}, "Chats Saved")
 
     } catch (err: any) {
-        console.log(err)
+        console.log(err.data?.data)
         return CustomResponse(500, { error: err.message }, "Server Error")
     }
 }

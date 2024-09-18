@@ -32,7 +32,8 @@ class RedisClient {
     }
 
     async doesRoomExists(roomId) {
-        if (await this.redis.call("JSON.OBJKEYS", roomId)) return true
+        const room = await this.getRoom(roomId)
+        if (room) return true
         else false
     }
 
@@ -112,20 +113,11 @@ app.prepare().then(() => {
         socket.on("joinRoom", async (data) => {
             socket.join(data)
             await redis.addRoomId(socket.id, data)
-            if (await redis.doesRoomExists(data)) {
+            const room = await redis.doesRoomExists(data)
+            if (room) {
                 await redis.updateRoomSize(data, 1)
             } else {
                 await redis.addRoomData(data)
-                interval = setInterval(async () => {
-                    const room = await redis.getRoom(data)
-                    if (room?.chats?.length != 0) {
-                        const chats = room?.chats
-                        axios.post(`${process.env.SERVER}/api/v1/chats`, { chats }).then(() => {
-                            console.log(chalk.yellowBright("chats saved"))
-                        })
-                        await redis.clearRoomChats(data)
-                    }
-                }, 5000)
             }
 
             console.log(chalk.blueBright("room joined", data))
@@ -135,10 +127,10 @@ app.prepare().then(() => {
         socket.on("sendMessage", async (message) => {
             const roomId = await redis.getRoomId(socket.id)
             const room = await redis.getRoom(roomId)
+            console.log("Message is", message)
             if (room?.size == 1) {
-                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: message }).then(() => {
-                    console.log(chalk.yellowBright("chats saved"))
-                })
+                await axios.post(`${process.env.SERVER}/api/v1/chats`, { chats: message })
+                console.log(chalk.yellowBright("chats saved"))
             } else {
                 await redis.addChat(roomId, message)
                 socket.broadcast.to(roomId).emit("msgRecieved", message)
@@ -158,9 +150,8 @@ app.prepare().then(() => {
 
             if (room.chats.length != 0) {
                 const chats = room.chats
-                axios.post(`${process.env.SERVER}/api/v1/chats`, { chats }).then(() => {
-                    console.log(chalk.yellowBright("chats saved"))
-                })
+                await axios.post(`${process.env.SERVER}/api/v1/chats`, { chats })
+                console.log(chalk.yellowBright("chats saved"))
                 await redis.clearRoomChats(roomId)
             }
             await redis.delRoomId(socket.id)
