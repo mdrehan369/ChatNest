@@ -2,15 +2,16 @@ import { CustomResponse } from "@/helpers/customResponse";
 import { userModel } from "@/models/user.model";
 import { NextRequest } from "next/server";
 import { HydratedDocument } from "mongoose";
-import { IUser, JwtDecodedToken } from "@/types/user.types";
-import { getDecodedToken } from "@/helpers/fetchUser";
+import { IUser } from "@/types/user.types";
 
 
 export async function GET(req: NextRequest) {
     try {
         
-        const decodedToken: JwtDecodedToken = await getDecodedToken()
-        const user: HydratedDocument<IUser> = await userModel.findById(decodedToken.id).exec()
+        const userId = req.nextUrl.searchParams.get("userId")
+        const user: HydratedDocument<IUser> = await userModel.findById(userId).exec()
+        if(!user) throw Error("No User Found")
+
         user.isOnline = false
         await user.save()
 

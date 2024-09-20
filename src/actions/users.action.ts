@@ -3,8 +3,9 @@
 import { Data } from "@/app/(main)/profile/page"
 import { userModel } from "@/models/user.model"
 import { IUser, JwtDecodedToken } from "@/types/user.types"
-import { getDecodedToken } from "@/helpers/fetchUser"
+import { fetchUser, getDecodedToken } from "@/helpers/fetchUser"
 import { HydratedDocument } from "mongoose"
+import chalk from "chalk"
 
 export const getUser = async (userId: string): Promise<string | null> => {
     try {
@@ -23,6 +24,21 @@ export const updateUser = async (data: Data) => {
         const decodedToken: JwtDecodedToken = await getDecodedToken()
         await userModel.findByIdAndUpdate(decodedToken.id!, {...data})
         return true
+    } catch (err) {
+        console.log(err)
+        return null
+    }
+}
+
+export const test = async () => {
+    console.log(chalk.magenta("leaved!"))
+}
+
+export const markOnline = async () => {
+    try {
+        const user = await fetchUser()
+        user.isOnline = true
+        await user.save()
     } catch (err) {
         console.log(err)
         return null

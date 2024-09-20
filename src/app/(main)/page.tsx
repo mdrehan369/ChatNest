@@ -9,7 +9,8 @@ import Loading from "./loading"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import io from "socket.io-client"
+import { Socket } from "socket.io-client"
+import { socketClient } from "@/helpers/socket";
 import { BsThreeDots } from "react-icons/bs";
 
 import {
@@ -47,7 +48,7 @@ function ChatBox({ userId, unmount }: any) {
     const [chats, setChats] = useState([])
     const [newChats, setNewChats] = useState([])
     const [message, setMessage] = useState("")
-    const [socket, setSocket]: any = useState(null)
+    const [socket, setSocket] = useState<Socket | null>(socketClient)
     const roomId = useRef("")
     const loggedUser = useAppSelector(state => state.user.user)
     const [user, setUser]: any = useState(null)
@@ -67,7 +68,7 @@ function ChatBox({ userId, unmount }: any) {
                 const response = await axios.get(`/api/v1/chats?user=${userId}`)
                 setChats(response.data.data.chats)
                 setUser(response.data.data.user)
-                setSocket(io())
+                setSocket(socketClient)
                 roomId.current = response.data.data.roomId
                 const wallpaper = await axios.get(`/api/v1/preferences/wallpaper?user=${userId}`)
                 setWallpaper(wallpaper.data.data)
@@ -112,7 +113,9 @@ function ChatBox({ userId, unmount }: any) {
         }
 
         return () => {
-            socket?.disconnect()
+            socket?.emit("leaveRoom")
+            socket?.removeAllListeners("typing")
+            socket?.removeAllListeners("msgRecieved")
         }
 
     }, [socket])
@@ -125,7 +128,9 @@ function ChatBox({ userId, unmount }: any) {
             content: message,
             createdAt: new Date().toISOString()
         }
-        socket.emit("sendMessage", data)
+        console.log(data)
+        socket?.emit("sendMessage", data)
+
         setNewChats((prev): any => [...prev, data])
         setMessage("")
         sentAudio.current.play()
@@ -338,85 +343,71 @@ function ChatBox({ userId, unmount }: any) {
 
 export default function Home() {
 
-    const router = useRouter()
-
     const user = useAppSelector(state => state.user.user)
-    const [userState, setUserState] = useState(user)
     const [loader, setLoader] = useState(true)
     const [friends, setFriends] = useState([])
     const [userId, setUserId] = useState("")
     const userIdRef = useRef("")
     const [search, setSearch] = useState("")
-    const [socket, setSocket]: any = useState(null)
-    const dispatch = useAppDispatch()
+    const [socket, setSocket] = useState<Socket>(socketClient)
 
-    useEffect((): any => {
-        if (!user) {
-            ; (async () => {
-                try {
-                    setLoader(true)
-                    const response = await axios.get('/api/v1/users')
-                    const preferences = await axios.get('/api/v1/preferences')
-                    dispatch(login(response.data.data.user))
-                    dispatch(uploadPreferences(preferences.data.data))
-                    setUserState(response.data.data.user)
-                } catch (error) {
-                    console.log(error);
-                    router.push('/login')
-                } finally {
-                    setLoader(false)
-                }
-            })()
+    useEffect(() => {
+        ; (async () => {
+            try {
+                const response = await axios.get(`/api/v1/friends/all?search=${search}`)
+                console.log(response.data.data.friends)
+                setFriends(response.data.data.friends)
+                // setSocket(socketClient)
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setLoader(false)
+            }
+        })()
+    }, [search])
+
+    useEffect(() => {
+
+        socket.emit("markOnline", user?._id.toString())
+        socket.emit("joinGlobalRoom", user?._id.toString())
+        socket.on("globalMsgReceived", (message: IChat) => {
+            console.log(message)
+            console.log(userIdRef.current)
+            if (message.to.toString() === user?._id.toString() || message.from.toString() === user?._id.toString()) {
+                setFriends((prev: any) => prev.map((friend: any) => {
+                    if (friend._id === message.from || friend._id === message.to) {
+                        if (userIdRef.current === friend._id) {
+                            message.seen = true
+                        } else {
+                            message.seen = false
+                        }
+                        friend.lastChat = message
+                        console.log(friend)
+                    }
+                    return friend
+                }))
+            }
+        })
+        socket.on("markOffline", (userId) => {
+            console.log(userId)
+            setFriends((prev: any) => prev.map((friend: any) => {
+                if (friend._id === userId) friend.isOnline = false
+                return friend
+            }))
+        })
+        socket.on("markOnline", (userId) => {
+            console.log(userId)
+            setFriends((prev: any) => prev.map((friend: any) => {
+                if (friend._id === userId) friend.isOnline = true
+                return friend
+            }))
+        })
+
+        return () => {
+            console.log(user?._id)
         }
 
     }, [])
-
-    useEffect(() => {
-        if (userState) {
-            ; (async () => {
-                try {
-                    const response = await axios.get(`/api/v1/friends/all?search=${search}`)
-                    console.log(response.data.data.friends)
-                    setFriends(response.data.data.friends)
-                    setSocket(io())
-                } catch (error) {
-                    console.log(error);
-                } finally {
-                    setLoader(false)
-                }
-            })()
-        }
-    }, [userState, search])
-
-    useEffect(() => {
-        if (socket) {
-            socket.emit("joinGlobalRoom", "")
-            socket.on("globalMsgReceived", (message: IChat) => {
-                console.log(message)
-                console.log(userIdRef.current)
-                if (message.to.toString() === userState?._id.toString() || message.from.toString() === userState?._id.toString()) {
-                    setFriends((prev: any) => prev.map((friend: any) => {
-                        if (friend._id === message.from || friend._id === message.to) {
-                            if (userIdRef.current === friend._id) {
-                                message.seen = true
-                                console.log(message)
-                            } else {
-                                message.seen = false
-                            }
-                            friend.lastChat = message
-                            console.log(friend)
-                        }
-                        return friend
-                    }))
-                }
-            })
-        }
-
-        return () => {
-            socket?.disconnect()
-        }
-
-    }, [socket])
 
     const unmount = () => {
         setUserId("")
@@ -435,7 +426,7 @@ export default function Home() {
     }
 
     return (
-        !loader && userState ?
+        !loader && user ?
             <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-white">
                 <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[0px] border-gray-400 flex flex-col items-center justify-start gap-2">
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className=" border-none" />
@@ -465,7 +456,7 @@ export default function Home() {
                                     {
                                         friend.lastChat &&
                                         <>
-                                            <span className={!friend.lastChat.seen && friend.lastChat.to === userState._id ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
+                                            <span className={!friend.lastChat.seen && friend.lastChat.to === user._id ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
                                             <span>{ISOtoTime(friend.lastChat.createdAt)}</span>
                                         </>
                                     }

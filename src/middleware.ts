@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { CustomResponse } from "@/helpers/customResponse";
+import { fetchUser } from "./helpers/fetchUser";
 
 export async function middleware(req: NextRequest) {
     try {
@@ -11,16 +12,16 @@ export async function middleware(req: NextRequest) {
 
         const response = NextResponse.next();
         return response;
-        
+
     } catch (err: any) {
-        return CustomResponse(500, {error: err.message}, "Error in middleware")
+        return CustomResponse(500, { error: err.message }, "Error in middleware")
     }
 }
 
 export const config = {
     matcher: [
-      '/',
-    //   '/login',
-    //   '/signup'
+        '/',
+        //   '/login',
+        //   '/signup'
     ]
-  }
+}
