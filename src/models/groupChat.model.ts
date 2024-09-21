@@ -23,8 +23,8 @@ const groupChatSchema = new mongoose.Schema<IGroupChat>({
     },
     seen: [
         {
-            type: Boolean,
-            default: false
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
         }
     ]
 }, {timestamps: true})
