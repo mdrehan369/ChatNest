@@ -48,7 +48,7 @@ function ChatBox({ userId, unmount }: any) {
     const [chats, setChats] = useState([])
     const [newChats, setNewChats] = useState([])
     const [message, setMessage] = useState("")
-    const [socket, setSocket] = useState<Socket | null>(socketClient)
+    const [socket, setSocket] = useState<Socket | null>(null)
     const roomId = useRef("")
     const loggedUser = useAppSelector(state => state.user.user)
     const [user, setUser]: any = useState(null)
@@ -68,8 +68,8 @@ function ChatBox({ userId, unmount }: any) {
                 const response = await axios.get(`/api/v1/chats?user=${userId}`)
                 setChats(response.data.data.chats)
                 setUser(response.data.data.user)
-                setSocket(socketClient)
                 roomId.current = response.data.data.roomId
+                setSocket(socketClient)
                 const wallpaper = await axios.get(`/api/v1/preferences/wallpaper?user=${userId}`)
                 setWallpaper(wallpaper.data.data)
 
@@ -407,7 +407,7 @@ export default function Home() {
             console.log(user?._id)
         }
 
-    }, [])
+    }, [socket, user?._id])
 
     const unmount = () => {
         setUserId("")
@@ -418,7 +418,7 @@ export default function Home() {
         setUserId(id)
         userIdRef.current = id
         setFriends((prev: any) => prev.map((friend: any) => {
-            if (friend._id === id) {
+            if (friend._id === id && friend.lastChat !== undefined) {
                 friend.lastChat.seen = true
             }
             return friend

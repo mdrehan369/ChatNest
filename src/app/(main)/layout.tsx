@@ -10,6 +10,7 @@ import { markOnline } from "@/actions/users.action";
 import { uploadPreferences } from "@/redux/features/users/preferencesSlice";
 import Loading from "./loading";
 import { socketClient } from "@/helpers/socket";
+import { Socket } from "socket.io-client";
 
 export default function RootLayout({
   children,
@@ -20,15 +21,16 @@ export default function RootLayout({
   const user = useAppSelector((state) => state.user.user);
   const dispatch = useAppDispatch();
   const [loader, setLoader] = useState(true);
-  //   const [socket, setSocket] = useState()
+  const [socket, setSocket] = useState<Socket>(socketClient)
 
   useEffect(() => {
 
-    const socket = socketClient;
-    socket.connect();
+    // const socket = socketClient;
+    // socket.connect();
     (async () => {
       try {
         if (user) return;
+        socket.connect()
         const response = await axios.get("/api/v1/users");
         const preferences = await axios.get("/api/v1/preferences");
         dispatch(login(response.data.data.user));

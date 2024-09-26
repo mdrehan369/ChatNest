@@ -32,7 +32,7 @@ const formSchema = z.object({
     password: z.string().min(4, { message: "Password should be atleast of 4 letters" })
 })
 
-export default function signup() {
+export default function Signup() {
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

@@ -25,6 +25,16 @@ export type Data = {
     profile_pic?: string
 }
 
+function useCld({results, setData}: any) {
+    useEffect(() => {
+        console.log(results)
+        if (results?.event === "success") {
+            setData((prev: any) => ({ ...prev, profile_pic: results?.info.public_id }))
+        }
+    }, [results])
+
+}
+
 export default function Profile() {
 
     const userId = useSearchParams().get("userId") || null
@@ -83,7 +93,7 @@ export default function Profile() {
                 setLoader(false)
             }
         })()
-    }, [loggedInUser])
+    }, [loggedInUser, userId])
 
     return (
         !loader ?
@@ -91,17 +101,19 @@ export default function Profile() {
                 <Card className="w-[25%] h-[90%] flex flex-col items-center justify-start gap-2 py-5 px-3">
                     <CardHeader>
                         <CldUploadWidget uploadPreset="Chatnest">
-                            {({ open, results }: any) => {
-                                useEffect(() => {
-                                    console.log(results)
-                                    if (results?.event === "success") {
-                                        setData({ ...data, profile_pic: results?.info.public_id })
-                                    }
-                                }, [results])
-                                return (
-                                    <CldImage onClick={() => loggedInUser?._id === user?._id && open()} alt="" width={200} height={200} src={data?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} className="bg-gray-300 rounded-full p-2 w-[200px] h-[200px] object-cover" />
-                                )
-                            }
+                            {
+                                ({ open, results }: any) => {
+                                    // useEffect(() => {
+                                    //     console.log(results)
+                                    //     if (results?.event === "success") {
+                                    //         setData({ ...data, profile_pic: results?.info.public_id })
+                                    //     }
+                                    // }, [results])
+                                    useCld({results, setData})
+                                    return (
+                                        <CldImage onClick={() => loggedInUser?._id === user?._id && open()} alt="" width={200} height={200} src={data?.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} className="bg-gray-300 rounded-full p-2 w-[200px] h-[200px] object-cover" />
+                                    )
+                                }
                             }
                         </CldUploadWidget>
                     </CardHeader>

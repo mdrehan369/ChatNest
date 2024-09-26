@@ -14,10 +14,10 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/Chatnest
       - REDIS_HOST=redis
-      - CLOUDINARY_CLOUD_NAME=
-      - CLOUDINARY_API_KEY=
-      - CLOUDINARY_API_SECRET=
-      - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+      # - CLOUDINARY_CLOUD_NAME=
+      # - CLOUDINARY_API_KEY=
+      # - CLOUDINARY_API_SECRET=
+      # - NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
 
   redis:
     image: 'redis/redis-stack-server'
@@ -30,4 +30,14 @@ services:
     ports:
       - "27017:27017"
     container_name: 'mongo'
-    
+    volumes:
+      - myVol:/data
+  
+  redis-insight:
+    image: redis/redisinsight
+    ports:
+      - "5540:5540"
+    container_name: 'redisinsight'
+
+volumes:
+  myVol:

@@ -51,6 +51,7 @@ app.prepare().then(() => {
       socket.join(data);
       await redis.addRoomId(socket.id, data);
       const room = await redis.doesRoomExists(data);
+      console.log("data is", data)
       if (room) {
         await redis.updateRoomSize(data, 1);
       } else {
@@ -63,7 +64,7 @@ app.prepare().then(() => {
     socket.on("sendMessage", async (message) => {
       const roomId = await redis.getRoomId(socket.id);
       const room = await redis.getRoom(roomId);
-      console.log("Message is", message);
+      console.log("room is", room?.size);
       if (room?.size == 1) {
         await axios.post(`${process.env.SERVER}/api/v1/chats`, {
           chats: message,
