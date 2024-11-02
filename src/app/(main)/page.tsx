@@ -26,6 +26,7 @@ import { MessageCircleMore, Trash2, X } from "lucide-react";
 import { CldImage } from "next-cloudinary";
 import { Separator } from "@/components/ui/separator";
 import { IChat } from "@/types/chat.types";
+import SideBar from "@/components/SideBar";
 
 
 function ISOtoTime(isoDate: any) {
@@ -428,6 +429,64 @@ export default function Home() {
     return (
         !loader && user ?
             <main className="w-[100vw] h-[93vh] flex items-center justify-between p-4 bg-white">
+                {/* <SideBar
+                    search={search}
+                    setSearch={setSearch}
+                    openChats={openChats}
+                    arr={friends}
+                /> */}
+
+<div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[0px] border-gray-400 flex flex-col items-center justify-start gap-2">
+                    <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className=" border-none" />
+                    <Separator className=" bg-gray-200 h-[2px]" />
+                    {
+                        friends.map((friend: any, index) => <div onClick={() => openChats(friend._id)} key={index} className="w-full bg-gray-200 cursor-pointer hover:bg-gray-300 transition-colors duration-500 border-[2px] border-gray-200 rounded p-2 flex items-center justify-start gap-4 pl-4">
+                            <Avatar>
+                                <CldImage src={friend.profile_pic || "LawKeeper/ghb4flnfqwgk3fyd6zv2"} width={100} height={100} alt="" className=" object-cover" />
+                                <AvatarFallback>CN</AvatarFallback>
+                            </Avatar>
+                            <div className="w-full relative flex flex-col items-start justify-center gap-0">
+                                <div className=" flex items-center justify-start gap-2">
+                                    {
+                                        friend?.isOnline &&
+                                        <div className="w-[7px] h-[7px] rounded-full bg-green-600"></div>
+                                    }
+                                    <Highlighter
+                                        className="text-slate-900 text-xl font-semibold"
+                                        highlightStyle={{ color: "white", backgroundColor: "black" }}
+                                        searchWords={[`${search}`]}
+                                        autoEscape={true}
+                                        textToHighlight={friend.name}
+                                    />
+                                </div>
+                                <div className="w-full flex items-center justify-between text-sm text-gray-600 font-medium italic">
+                                    {
+                                        friend.lastChat &&
+                                        <>
+                                            <span className={!friend.lastChat.seen && friend.lastChat.to === user._id ? 'text-green-600' : ''}>{friend.lastChat.from === friend._id ? friend.lastChat.content : `You: ${friend.lastChat.content}`}</span>
+                                            <span>{ISOtoTime(friend.lastChat.createdAt)}</span>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+                        </div>)
+                    }
+
+                </div>
+                
+                {
+                    userId != "" ?
+                        <ChatBox userId={userId} unmount={unmount} key={userId} />
+                        : <NoChat />
+                }
+            </main>
+            : <Loading />
+    );
+}
+
+
+/*
+
                 <div className="w-[20vw] h-full bg-gray-100 p-3 rounded border-[0px] border-gray-400 flex flex-col items-center justify-start gap-2">
                     <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className=" border-none" />
                     <Separator className=" bg-gray-200 h-[2px]" />
@@ -451,7 +510,6 @@ export default function Home() {
                                         textToHighlight={friend.name}
                                     />
                                 </div>
-                                {/* <span className="text-xl font-semibold text-slate-800">{friend.name}</span> */}
                                 <div className="w-full flex items-center justify-between text-sm text-gray-600 font-medium italic">
                                     {
                                         friend.lastChat &&
@@ -466,12 +524,5 @@ export default function Home() {
                     }
 
                 </div>
-                {
-                    userId != "" ?
-                        <ChatBox userId={userId} unmount={unmount} key={userId} />
-                        : <NoChat />
-                }
-            </main>
-            : <Loading />
-    );
-}
+
+*/
